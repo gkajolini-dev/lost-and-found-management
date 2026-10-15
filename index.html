@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lost and Found Management</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#1e293b}
+header{background:#4338ca;color:white;text-align:center;padding:25px 12px}
+header h1{margin:0 0 10px;font-size:27px}
+nav{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:18px}
+button{background:#4f46e5;color:white;border:0;padding:11px 16px;border-radius:8px;cursor:pointer}
+nav button{background:white;color:#4338ca}
+main{max-width:900px;margin:25px auto;padding:0 14px}
+.card{background:white;padding:20px;border-radius:12px;margin-bottom:20px;box-shadow:0 3px 12px #00000010}
+h2{color:#4338ca}
+input,select,textarea{width:100%;padding:12px;margin:7px 0 14px;border:1px solid #cbd5e1;border-radius:7px;font-size:15px}
+textarea{min-height:85px}
+label{font-weight:bold}
+.item{border:1px solid #e2e8f0;border-radius:9px;padding:14px;margin-top:12px;overflow-wrap:anywhere}
+.item h3{margin-top:0}
+.tag{display:inline-block;background:#e0e7ff;color:#3730a3;padding:5px 9px;border-radius:15px;font-size:12px}
+.hidden{display:none}
+footer{text-align:center;padding:20px;color:#64748b}
+</style>
+</head>
+<body>
+<header>
+<h1>🔎 Lost & Found Hub</h1>
+<p>Helping lost belongings find their owners</p>
+<nav>
+<button onclick="showPage('home')">Home</button>
+<button onclick="showPage('lost')">Report Lost</button>
+<button onclick="showPage('found')">Report Found</button>
+<button onclick="showPage('items')">View Items</button>
+</nav>
+</header>
+
+<main>
+<section id="home" class="page">
+<div class="card">
+<h2>Welcome!</h2>
+<p>Lost something? Found something? Help reunite people with their belongings.</p>
+<button onclick="showPage('lost')">Report a Lost Item</button>
+<button onclick="showPage('found')">Report a Found Item</button>
+</div>
+<div class="card">
+<h2>How It Works</h2>
+<p>1. Report an item that you lost or found.</p>
+<p>2. View the list of reported items.</p>
+<p>3. Search for items by name or location.</p>
+</div>
+</section>
+
+<section id="lost" class="page hidden">
+<div class="card">
+<h2>Report a Lost Item</h2>
+<form id="lostForm">
+<label>Item Name</label>
+<input name="name" placeholder="e.g. College ID Card" required>
+<label>Category</label>
+<select name="category">
+<option>Electronics</option><option>ID Card</option><option>Books</option><option>Bag</option><option>Keys</option><option>Water Bottle</option><option>Other</option>
+</select>
+<label>Location Lost</label>
+<input name="location" placeholder="e.g. College Library" required>
+<label>Date Lost</label>
+<input name="date" type="date" required>
+<label>Description</label>
+<textarea name="description" placeholder="Describe the item..." required></textarea>
+<button type="submit">Submit Lost Item</button>
+</form>
+</div>
+</section>
+
+<section id="found" class="page hidden">
+<div class="card">
+<h2>Report a Found Item</h2>
+<form id="foundForm">
+<label>Item Name</label>
+<input name="name" placeholder="e.g. Blue Water Bottle" required>
+<label>Category</label>
+<select name="category">
+<option>Electronics</option><option>ID Card</option><option>Books</option><option>Bag</option><option>Keys</option><option>Water Bottle</option><option>Other</option>
+</select>
+<label>Location Found</label>
+<input name="location" placeholder="e.g. College Library" required>
+<label>Date Found</label>
+<input name="date" type="date" required>
+<label>Description</label>
+<textarea name="description" placeholder="Describe the item..." required></textarea>
+<button type="submit">Submit Found Item</button>
+</form>
+</div>
+</section>
+
+<section id="items" class="page hidden">
+<div class="card">
+<h2>Reported Items</h2>
+<input id="search" placeholder="Search by item name or location..." oninput="renderItems()">
+<div id="itemList"></div>
+</div>
+</section>
+</main>
+
+<footer>Lost & Found Management Website | Student Project</footer>
+
+<script>
+let items=[];
+try{items=JSON.parse(localStorage.getItem('lostFoundItems')||'[]')}catch(e){items=[]}
+
+function showPage(id){
+document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+document.getElementById(id).classList.remove('hidden');
+if(id==='items')renderItems();
+window.scrollTo(0,0);
+}
+
+function setupForm(formId,type){
+document.getElementById(formId).addEventListener('submit',function(e){
+e.preventDefault();
+const data=Object.fromEntries(new FormData(this).entries());
+items.unshift({...data,type:type,id:Date.now()});
+try{localStorage.setItem('lostFoundItems',JSON.stringify(items))}catch(e){}
+this.reset();
+alert(type+' item reported successfully!');
+showPage('items');
+});
+}
+setupForm('lostForm','Lost');
+setupForm('foundForm','Found');
+
+function renderItems(){
+const query=document.getElementById('search').value.toLowerCase();
+const filtered=items.filter(i=>(i.name+' '+i.location+' '+i.category+' '+i.description).toLowerCase().includes(query));
+const list=document.getElementById('itemList');
+if(filtered.length===0){
+list.innerHTML='<p style="margin-top:15px">No items found. Try another search or report an item.</p>';
+return;
+}
+list.innerHTML=filtered.map(i=>`
+<div class="item">
+<span class="tag">${i.type} Item</span>
+<h3>${escapeHTML(i.name)}</h3>
+<p><b>Category:</b> ${escapeHTML(i.category)}</p>
+<p><b>Location:</b> ${escapeHTML(i.location)}</p>
+<p><b>Date:</b> ${escapeHTML(i.date)}</p>
+<p><b>Description:</b> ${escapeHTML(i.description)}</p>
+</div>`).join('');
+}
+function escapeHTML(text){
+return String(text).replace(/[&<>"']/g,function(c){
+return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+});
+}
+renderItems();
+</script>
+</body>
+</html>
